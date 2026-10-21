@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Load Balancer Lab · T22</title><meta name="description" content="Phòng thực hành cân bằng tải Python: Round Robin, Consistent Hashing và health checks."><link rel="stylesheet" href="/static/style.css"></head>
+<body><header><a class="brand" href="/"><span class="logo">↗</span> NETWORK<span class="brand-light"> / LAB</span></a><span class="header-note">T22 <span>·</span> PYTHON EDITION</span><span id="connection" class="connection">Đang kết nối</span></header>
+<main>
+<section class="hero"><div><p class="eyebrow">PHÒNG THỰC HÀNH / LOAD BALANCING</p><h1>Một điểm đến.<br><span>Nhiều cách phân phối.</span></h1><p class="lead">Gửi lưu lượng thật. Quan sát cách chọn máy.<br>Khám phá điều gì xảy ra khi một backend biến mất.</p></div><div class="hero-meta"><span>01 — ROUND ROBIN</span><span>02 — CONSISTENT HASHING</span><span>03 — HEALTH CHECKS</span></div></section>
+<div id="notice" class="notice" role="status" aria-live="polite">Đang chờ Python và health checks khởi động…</div>
+<div class="workspace">
+<aside class="controls panel"><p class="eyebrow">THIẾT LẬP THÍ NGHIỆM</p><h2>Điều phối lưu lượng</h2>
+<label for="algorithm">Thuật toán</label><select id="algorithm"><option value="round_robin">Round Robin</option><option value="consistent_hash">Consistent Hashing</option></select>
+<label for="vnodes">Nút ảo / backend <span>(cho vòng băm)</span></label><input id="vnodes" type="number" min="1" max="500" value="100"><button id="apply" class="secondary">Áp dụng & bắt đầu lượt mới</button>
+<div class="divider"></div><label for="key">Khóa người dùng</label><input id="key" value="user-001" maxlength="128" autocomplete="off">
+<label for="pattern">Khóa trong một đợt</label><select id="pattern"><option value="unique">Nhiều khóa khác nhau</option><option value="same">Lặp lại cùng một khóa</option><option value="hot">80% cùng khóa (điểm nóng)</option></select>
+<div class="input-pair"><div><label for="count">Số yêu cầu</label><input id="count" type="number" value="12" min="1" max="1000"></div><div><label for="concurrency">Đồng thời</label><select id="concurrency"><option value="1">1 · tuần tự</option><option value="6">6</option><option value="12">12</option><option value="30">30</option></select></div></div>
+<button id="send" class="primary">Gửi 1 yêu cầu <span>↗</span></button><button id="batch" class="secondary">Chạy một đợt</button><button id="cancel" class="text-button" disabled>Dừng gửi thêm</button>
+<p id="progress" class="small">Sẵn sàng. Bắt đầu với một yêu cầu.</p><p class="micro">Tuần tự: có nghỉ 180 ms để quan sát. Đồng thời: không thêm nghỉ. Dùng benchmark riêng khi cần đo hiệu năng.</p></aside>
+<section class="live panel"><div class="section-heading"><div><p class="eyebrow">LUỒNG HTTP TRỰC TIẾP</p><h2>Ba máy. Một bộ điều phối.</h2></div><span id="active-algorithm" class="tag">ROUND ROBIN</span></div>
+<div class="flow"><div class="client-node"><span class="node-symbol">⌘</span><strong>Trình duyệt</strong><small>HTTP request</small></div><span class="flow-arrow">→</span><div class="lb-node"><span class="eyebrow">PYTHON / :8080</span><strong>Load Balancer</strong><small id="last-route">Đang chờ lượt đầu tiên</small></div><span class="flow-arrow">→</span><div class="pool-node"><span class="node-symbol">▤</span><strong>Backend pool</strong><small id="healthy-count">0 / 3 máy khỏe</small></div></div>
+<div id="servers" class="servers"></div>
+<div class="lesson"><span>↳</span><p id="lesson">Round Robin chia lượt A → B → C. Chia đều số yêu cầu không đồng nghĩa với chia đều thời gian xử lý.</p></div>
+<div class="metrics"><div><small>Đã nhận / đang xử lý</small><strong id="m-total">0 <em>/ 0</em></strong></div><div><small>Phản hồi TB</small><strong id="m-average">0 <em>ms</em></strong></div><div><small>p95 · mẫu gần nhất</small><strong id="m-p95">0 <em>ms</em></strong></div><div><small>Lỗi / đã hoàn tất</small><strong id="m-errors">0 <em>/ 0</em></strong></div></div>
+<p class="micro metric-note">Đo từ lúc load balancer nhận đến lúc xử lý xong; gồm cả yêu cầu lỗi. Các thanh trên máy thể hiện tỷ lệ phân công, không phải CPU.</p>
+</section>
+</div>
+<section class="bottom-grid">
+<div class="journal panel"><div class="section-heading"><div><p class="eyebrow">QUAN SÁT TỪNG YÊU CẦU</p><h2>Nhật ký phân phối</h2></div><button id="reset" class="text-button">Xóa thống kê ↺</button></div><div class="table-wrap"><table><thead><tr><th>Lượt</th><th>Khóa</th><th>Máy</th><th>Thời gian</th><th>HTTP</th></tr></thead><tbody id="logs"><tr><td colspan="5" class="empty">Chưa có yêu cầu. Nhấn “Gửi 1 yêu cầu” để bắt đầu.</td></tr></tbody></table></div><p class="micro">100 kết quả hoàn thành gần nhất. Số lượt phản ánh thứ tự tiếp nhận; thứ tự hoàn thành có thể khác khi gửi đồng thời.</p></div>
+<div class="ring-panel panel"><div class="section-heading"><div><p class="eyebrow">CONSISTENT HASHING</p><h2>Khóa đi về đâu?</h2></div><button id="inspect" class="text-button">Tra khóa ↗</button></div>
+<svg id="ring" viewBox="0 0 300 270" role="img" aria-label="Vòng băm: các nút ảo backend và vị trí khóa người dùng"></svg><p id="ring-result" class="ring-result">Đang lấy vòng băm…</p><p class="micro">Vòng băm luôn dùng tập backend khỏe hiện tại. Ở chế độ Round Robin, hình này chỉ là phần khám phá, không quyết định đường đi yêu cầu.</p>
+</div></section>
+<section class="compare panel"><div><p class="eyebrow">THÍ NGHIỆM ÁNH XẠ / KHÔNG GỬI HTTP</p><h2>Khi bỏ máy C, bao nhiêu khóa đổi máy?</h2><p class="small">So sánh trên 1.000 khóa cố định và danh sách A, B, C trong cấu hình. Không dừng tiến trình thật.</p></div><button id="compare" class="secondary">So sánh ánh xạ →</button><div id="comparison" class="comparison" hidden></div></section>
+<footer><span>NETWORK / LAB — T22</span><span>4 tiến trình local · HTTP thật · Độ trễ xử lý giả lập</span><a href="/docs" target="_blank" rel="noopener">Tài liệu API ↗</a></footer>
+</main><script src="/static/app.js"></script></body></html>

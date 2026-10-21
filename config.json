@@ -1,0 +1,40 @@
+{
+  "load_balancer": {
+    "host": "127.0.0.1",
+    "port": 8080,
+    "algorithm": "round_robin",
+    "request_timeout_seconds": 5
+  },
+  "backends": [
+    {
+      "id": "A",
+      "url": "http://127.0.0.1:9001",
+      "port": 9001,
+      "delay_ms": 100
+    },
+    {
+      "id": "B",
+      "url": "http://127.0.0.1:9002",
+      "port": 9002,
+      "delay_ms": 100
+    },
+    {
+      "id": "C",
+      "url": "http://127.0.0.1:9003",
+      "port": 9003,
+      "delay_ms": 100
+    }
+  ],
+  "health_check": {
+    "interval_seconds": 2,
+    "timeout_seconds": 1,
+    "failure_threshold": 2,
+    "success_threshold": 2
+  },
+  "consistent_hash": {
+    "virtual_nodes": 100
+  },
+  "metrics": {
+    "max_log_entries": 1000
+  }
+}
